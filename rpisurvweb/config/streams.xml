@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<data>
+  <row>
+    <name>Blank</name>
+    <type>Static Image</type>
+    <address>/usr/local/bin/rpisurv/demo/resources/test.jpg</address>
+    <add>imageurl:true</add>
+    <address_>file:///usr/local/bin/rpisurv/demo/resources/test.jpg</address_>
+    <username/>
+    <password/>
+  </row>
+  <row>
+    <name>[DEMO] BigBuckBunny</name>
+    <type>Video File</type>
+    <address>/usr/local/bin/rpisurv/demo/resources/Big_Buck_Bunny_Trailer_fast_480p30.m4v</address>
+    <address_>file:///usr/local/bin/rpisurv/demo/resources/Big_Buck_Bunny_Trailer_fast_480p30.m4v</address_>
+    <username/>
+    <password/>
+  </row>
+  <row>
+    <name>[DEMO] TestImage</name>
+    <type>Static Image</type>
+    <address>/usr/local/bin/rpisurv/demo/resources/test.jpg</address>
+    <add>imageurl:true</add>
+    <address_>file:///usr/local/bin/rpisurv/demo/resources/test.jpg</address_>
+    <username/>
+    <password/>
+  </row>
+  </data>

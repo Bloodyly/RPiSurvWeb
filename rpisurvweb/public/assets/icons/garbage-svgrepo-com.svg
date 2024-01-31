@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 512 512" xml:space="preserve">
+<path style="fill:#8B8B8B;" d="M406.903,512H105.097l-0.944-15.694c-0.848-14.087-20.774-345.415-22.102-379.855l-0.669-17.339
+	h349.235l-0.669,17.339c-1.328,34.44-21.255,365.768-22.102,379.855L406.903,512z"/>
+<g>
+	<path style="fill:#6F6F6F;" d="M406.903,512H256l0.016-412.888h174.602l-0.669,17.339c-1.328,34.44-21.255,365.768-22.102,379.855
+		L406.903,512z"/>
+	<rect x="239.304" y="167.947" style="fill:#6F6F6F;" width="33.391" height="280.031"/>
+</g>
+<rect x="256" y="167.947" style="fill:#444444;" width="16.696" height="280.031"/>
+<rect x="37.011" y="291.471" transform="matrix(-0.0521 -0.9986 0.9986 -0.0521 -121.5389 500.9687)" style="fill:#6F6F6F;" width="279.952" height="33.39"/>
+<rect x="318.333" y="168.181" transform="matrix(-0.9986 -0.0521 0.0521 -0.9986 653.5457 633.3503)" style="fill:#444444;" width="33.39" height="279.952"/>
+<polygon style="fill:#8B8B8B;" points="229.067,61.219 195.675,61.216 195.68,0 316.325,0 316.325,61.217 282.933,61.217 
+	282.933,33.391 229.069,33.391 "/>
+<g>
+	<polygon style="fill:#6F6F6F;" points="256.016,0 316.325,0 316.325,61.217 282.933,61.217 282.933,33.391 256,33.391 	"/>
+	<path style="fill:#6F6F6F;" d="M450.783,132.503H61.217V44.522h389.565V132.503z"/>
+</g>
+<path style="fill:#444444;" d="M450.783,132.503H256.016V44.522h194.767V132.503z"/>
+</svg>

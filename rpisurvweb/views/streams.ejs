@@ -1,0 +1,509 @@
+<!-- views/streams.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streams</title>
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+	<script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+        }
+        #sidebar {
+            position: fixed;
+            height: 100%;
+            width: 250px;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background-color: #333;
+            padding-top: 20px;
+        }
+		.content-container {
+            display: flex;
+            margin-top: 20px;
+            left: 150px;
+        }
+
+        .content {
+            background-color: #333;
+            padding: 20px;
+            margin-bottom: 20px;
+            margin-right: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+			width: 100%
+        }
+        
+  	table {
+            background-color: #333; /* Dark background color for table */
+            color: #fff; /* Text color for table cells */
+            border-collapse: collapse; /* Remove default table cell spacing */
+	    width: 100%;
+        }
+        th, td {
+            border: 1px solid #444; /* Border color for table cells */
+            padding: 8px; /* Add padding to table cells */
+        }
+        .delete-cell {
+            cursor: pointer;
+            color: #ff4646; /* Red color for delete button */
+        }
+
+    </style>
+    <!-- Include jQuery -->
+    <script src="node_modules/jquery/dist/jquery.min.js"></script> 
+    </head>
+<body>
+   <!-- Include the navigation bar partial -->
+    <%- include('partials/navbar') %>
+	
+   <!-- the Overview table. Populated by function "populateOVTable()" -->
+   <div id="content-container" class="content-container">
+    <div id="content" class="content" >
+      <h1 class="h3 mb-3 fw-normal">Streams</h1>
+        <table id="streamTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Address</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be dynamically added here -->
+            </tbody>
+        </table>
+		<div class="modal" id="SettingsModal">
+			<form id="settingsForm">
+			<div class="modal-dialog">
+				<div class="modal-content">
+
+				  <!-- Settings Modal Header -->
+				  <div class="modal-header" style="background-color: #333;">
+					<h5 class="modal-title">Stream Type:</h5>
+					<select name="type" id="typeSelect"></select>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				  </div>
+				  <!-- Settings Modal Body -->
+				  <div class="modal-body" style="background-color: #333;">
+						<table id="SettingsTable" class="table table-bordered">
+							<thead>
+								<tr>
+									<th>Element</th>
+									<th>Value</th>
+									<th>  </th>
+								</tr>
+							</thead>
+							<tbody>
+								<!--additional rows will be added by scipt-->
+							</tbody>					
+						</table>
+						<button type="button" class="btn btn-primary">add Attribute</button>
+						<select id="addAtributeSelector"></select>
+				  </div>
+				  <!-- Settings Modal Footer -->
+				  <div class="modal-footer" style="background-color: #333;">
+					<button type="button" class="btn btn-success" id="AddStreamButton">Add Stream</button>
+				  </div>
+				</div>
+			</div>
+			</form>
+		</div>
+
+	<!-- Button trigger modal -->
+		<button id="addSettingButton" type="button" class="btn btn-primary">Add</button>
+		<button id="saveStreamsButton" type="button" class="btn btn-success">Save</button>
+    </div>
+</div>	
+<script>
+	// define Variables to store the actual config items in
+	let selectedStreamDataIndex = -1;
+	let streamsData = [];
+	let typesData = [];
+	//define the modal to be called anywhere
+	const settingsModal = document.getElementById('SettingsModal');
+	const modal = new bootstrap.Modal(settingsModal);
+    $(document).ready(function () {
+	//read Data from Server
+		$.ajax({
+			url: '/loadFromXml',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/xml',
+				'X-Config-Path': './config/streams.xml',
+			},
+			success: function (response) {
+				const rows = response.data.data.row;
+				streamsData = rows.map(row => {
+					const rowData = {};
+					const addVariablesObject = {};
+					Object.keys(row).forEach(key => {
+						if (key === 'addVariables'){
+							const variableKey=Object.keys(row[key][0])[0];
+							const variableValue=row[key][0][variableKey][0];
+							console.log("Key:",variableKey);
+							console.log("value:",variableValue);
+							addVariablesObject[variableKey] = variableValue;
+							console.log(addVariablesObject);
+							rowData[key] = [addVariablesObject];	
+							
+						} else if (Array.isArray(row[key]) && row[key].length === 1) {
+							// If it's an array with only one element, take that element
+							rowData[key] = row[key][0];
+						} else {
+							// Otherwise, treat it as a regular property
+							rowData[key] = row[key];
+						}
+					});
+					return rowData;
+				});
+				console.log(streamsData);
+				populateStreamsTable(streamsData);
+			},
+			error: function (error) {
+				console.error(error);
+			}
+		});
+		$.ajax({
+            url: '/loadFromXml',
+            method: 'POST',
+    	    headers: {
+        	'Content-Type': 'application/xml', // Change the content type if needed
+        	'X-Config-Path': './config/Camera_Types.xml', // Specify the file path
+            },
+            success: function (response) {
+				const options = response.data.data.option;
+				typesData = options.map(option => {
+					const optionData = {};
+					Object.keys(option).forEach(key => {
+						optionData[key] = option[key][0];
+					});
+					return optionData;
+				});
+				populateTypeSelect(typesData);
+				console.log(streamsData);
+			},
+			error: function (error) {
+				console.error(error);
+			}
+		});
+		
+		// addSetting Button Click Event
+        $('#addSettingButton').on('click', function () {
+            populateOVTable('Video File','empty')
+			modal.show();
+        });
+		
+		//change or Add Button in Modal
+		$('#AddStreamButton').on('click', function () {
+			collectData(selectedStreamDataIndex);
+			console.log(streamsData);
+        });
+		
+		$('#saveStreamsButton').on('click', function () {
+			saveStreamsData(streamsData);
+        });
+
+		// on selecting a stream type
+		$('#typeSelect').on('change', function () {
+			const selectedOption = typeSelect.value;
+			populateOVTable(selectedOption,'empty');
+        });
+
+        // Preview Row Click Event
+        $(document).on('click', '.preview', function () {
+            window.open('preview', '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+        });
+		
+    });
+	function openSettingsModal(selectedTypeName, selectedStreamName) {
+			populateOVTable(selectedTypeName, selectedStreamName)
+			modal.show();
+		}
+		
+    function collectData(editingIndex) {
+        let settingsData = {};
+		const addVariablesArray = [];
+		
+		const form = document.getElementById('settingsForm');	
+		const formData = new FormData(form);
+		
+		formData.forEach((value, key) => {
+			if (key.startsWith('addVariable_')) {
+				const variableName = key.substring('addVariable_'.length);
+				addVariablesArray.push({ [variableName]: value });
+			} else {
+			 settingsData[key] = value;
+			}
+		});	
+		const existingIndex = streamsData.findIndex(obj => obj.name === settingsData.name);
+		if(editingIndex === -1 ){
+			if(existingIndex === -1 ) {
+				streamsData.push({ ...settingsData,addVariables: addVariablesArray});
+				$('#SettingsModal').modal('hide');
+			} else {
+				const confirmation = confirm("A setting with the same name already exists. Do you want to overwrite it?");
+				if (confirmation) {
+					streamsData[existingIndex] = { ...settingsData, addVariables: addVariablesArray };
+					$('#SettingsModal').modal('hide');
+				}
+			}
+		} else {
+			streamsData[editingIndex] = { ...settingsData, addVariables: addVariablesArray };
+			$('#SettingsModal').modal('hide');
+		}
+		populateStreamsTable(streamsData);	
+	}
+	
+	function addPathToStreams(){
+		streamsData.forEach((row, index) => {
+			const definitions = typesData.find(option => option.name === row.type);
+			const patch = buildPatch(row, definitions);
+			if (patch !== null) {
+				console.log(`Patch: ${patch}`);
+				streamsData[index]["address_"] = patch;
+			}
+		});
+	}
+
+	function replaceVariables(template, object) {
+	// Replace variables enclosed in brackets with corresponding object properties
+	return template.replace(/\[([^\]]+)]/g, (match, variable) => object[variable.trim()] || match);
+	}
+	
+	function buildPatch(object, definition) {
+
+		let patch = "";
+		if (definition.prefix) {
+			patch += replaceVariables(definition.prefix, object);
+		}
+		patch += object.address;
+		if (definition.postfix) {
+			patch += replaceVariables(definition.postfix, object);
+		}
+
+	  return patch;
+	}
+	
+	function saveStreamsData(data){
+		addPathToStreams();
+        $.ajax({
+			url: '/saveToXml',
+			method: 'POST',
+			headers: {
+			   'Content-Type': 'application/json', // Change the content type if needed
+				   'X-Config-Path': './config/streams.xml', // Specify the file path
+				},
+			data: JSON.stringify(data),
+			//data: {data: data},
+			success: function (response){
+				console.log(response);
+				window.location.reload();
+			},
+			error: function (error){
+				console.error(error);
+				console.log(data);
+			}
+		});
+    }
+	
+	//Function to extract the Variables in [] of the String.
+	function extractVariables(str) {
+		const regex = /\[([^\]]+)\]/g;
+		const matches = [];
+		let match;
+		while ((match = regex.exec(str)) !== null) {
+			matches.push(match[1]);
+		}
+	return matches;
+	}
+	// Function to extract "add" key-variable pairs from a string
+	function extractAddVariables(str) {
+		const regex = /(\w+):(\w+)/g;
+		const matches = [];
+		let match;
+		while ((match = regex.exec(str)) !== null) {
+			matches.push({ key: match[1], variable: match[2] });
+		}
+		return matches;
+	}
+
+    function populateOVTable(selectedTypeName, selectedStreamName) {
+		const addAttributeSelect = document.getElementById('addAttributeSelector');
+		const addButton = document.getElementById('AddStreamButton');
+		const TypeSelector = document.querySelector('#typeSelect');
+		const selectedStreamData = streamsData.find(row => row.name === selectedStreamName) || '';
+		const selectedStreamDataName = selectedStreamData.name || '';
+		const selectedStreamDataPath = selectedStreamData.address || '';
+		selectedStreamDataIndex = streamsData.findIndex(row => row.name === selectedStreamName);
+		const selectedOptionData = typesData.find(option => option.name === selectedTypeName) || 'Static Image';
+		const prefix = selectedOptionData.prefix || '';
+		const postfix = selectedOptionData.postfix || '';
+		const add = selectedOptionData.add || '';
+		const prefixVariables = extractVariables(prefix);
+		const postfixVariables = extractVariables(postfix);
+		const addVariables = extractAddVariables(add);
+		const allVariables = [...prefixVariables, ...postfixVariables];
+		if(selectedStreamName !== "empty" ){
+			addButton.innerHTML = "Change";
+		} else {
+			addButton.innerHTML = "Add Stream";
+		}
+		TypeSelector.value = selectedTypeName;
+        // Clear existing rows
+        $('#SettingsTable tbody').empty();
+		
+        // Populate the table with the loaded data
+        const htmlRow = '<tr>' +
+            `<td>Name</td>` +
+            `<td><input name="name" value='${selectedStreamDataName}'></input></td>` +
+			`<td></td>` +
+            `</tr>` +
+			`<tr>` + 	
+            `<td>${selectedOptionData.mainfieldname}</td>` +
+            `<td><input name="address" value='${selectedStreamDataPath}'></input></td>` +
+			`<td></td>` +
+            `</tr>`;
+            $('#SettingsTable tbody').append(htmlRow);
+			
+		allVariables.forEach(variable => {
+			// Create a new row in the table
+			const row = SettingsTable.insertRow();
+
+			// Create a cell for the variable name
+			const variableCell = row.insertCell(0);
+			variableCell.innerHTML = variable;
+
+			// Create a cell for the input field
+			const inputCell = row.insertCell(1);
+			const inputField = document.createElement('input');
+			inputField.type = 'text';
+			inputField.name = variable;
+			// Set default value or leave it empty based on your requirements
+			if(selectedStreamData[variable] === undefined) {
+				inputField.value = ''; 
+			} else {
+				inputField.value = selectedStreamData[variable]; 
+			}
+			inputCell.appendChild(inputField);
+			// add empty cell
+			const emptyCell = row.insertCell(2);
+		});
+		// Create rows for each "add" key-variable pair in the selectTable
+		addVariables.forEach(addVar => {
+				const row = SettingsTable.insertRow();
+				const keyCell = row.insertCell(0);
+				const inputCell = row.insertCell(1);
+				const variableObject = selectedStreamData.addVariables.find(variable => variable[addVar.key] !== undefined);
+				const keyValue = variableObject ? variableObject[addVar.key] : undefined;
+				
+				keyCell.innerHTML = addVar.key;
+				if (addVar.variable === "true" || addVar.variable === "false") {
+					const selectField = document.createElement('select');
+
+					// Add options "true" and "false" to the select field
+					const optionTrue = document.createElement('option');
+					optionTrue.text = 'True';
+					optionTrue.value = 'true';
+					selectField.add(optionTrue);
+
+					const optionFalse = document.createElement('option');
+					optionFalse.text = 'False';
+					optionFalse.value = 'false';
+					selectField.add(optionFalse);
+					
+					selectField.name = "addVariable_" + addVar.key;
+
+					if(keyValue === "true" || keyValue === undefined ){
+						selectField.options[0].selected = true;
+					} else {
+						selectField.options[1].selected = true;
+					}
+					
+					inputCell.appendChild(selectField);
+				} else {
+					const inputField = document.createElement('input');
+					inputField.type = 'text';
+					inputField.name = "addVariable_" + addVar.key;
+					if(keyValue === undefined ){
+						inputField.value = '';
+					}else{
+						inputField.value = keyValue;
+					}
+					inputCell.appendChild(inputField);
+				}
+				
+				// Create a cell for the delete button
+				const delCell = row.insertCell(2);
+				const delButton = document.createElement('button');
+				delButton.type = 'button';
+				delButton.className = 'btn-close';
+				delButton.setAttribute('aria-label', 'Close');
+				delButton.addEventListener('click', function () {
+					// Remove the entire row when the delete button is clicked
+					SettingsTable.deleteRow(row.rowIndex);
+				});
+				delCell.appendChild(delButton);
+		});
+    }
+	
+	// populate the typeSelection with the types defined in the Camera_Typesxml
+	function populateTypeSelect(xmlData) {
+		try {
+			const selectElement = document.getElementById('typeSelect');
+			selectElement.innerHTML = '';
+
+			xmlData.forEach(option => {
+				if (option.name && typeof option.name === 'string') {
+					const name = option.name;
+					const optionElement = document.createElement('option');
+					optionElement.text = name;
+					optionElement.value = name;
+					selectElement.add(optionElement);
+				}
+			});
+		} catch (error) {
+			console.error('Error in populateTypeSelect:', error);
+		}
+	}
+	
+	function populateStreamsTable(data){
+		//clear the settings Modal:
+		$('#streamTable tbody').empty();
+		
+		// Populate the table with the loaded data
+        data.forEach((row, index) => {
+			if(row.username === undefined){row.username = '';}
+			if(row.password === undefined){row.password = '';}
+            let htmlRow = '<tr>' +
+                `<td>${row.name}</td>` +
+                `<td>${row.type}</td>` +
+                `<td>${row.address}</td>` +
+                `<td>${row.username}</td>` +
+                `<td>${row.password}</td>` +
+                `<td>`;
+			
+		if (index >0) {
+		htmlRow += `<span class="delete-row" style="cursor: pointer; color: red;" onclick="deleteStreamRow(${index});"><img src="/assets/icons/garbage-svgrepo-com.svg" width="30"/></span>` +
+					`<span class="edit-row" style="cursor: pointer; " onclick="openSettingsModal('${row.type}','${row.name}');"><img src="/assets/icons/pen-svgrepo-com.svg" width="30"/></span>` +
+					`</td>` +
+					`</tr>`;
+		}
+        $('#streamTable tbody').append(htmlRow);
+        });
+		
+	}
+	function deleteStreamRow(i){
+			streamsData.splice(i, 1);
+			populateStreamsTable(streamsData);
+	}
+</script></body>
+</html>

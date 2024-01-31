@@ -1,0 +1,7 @@
+essentials:
+  screens:
+    - camera_streams:
+        - url: "file:///usr/local/bin/rpisurv/demo/resources/test.jpg"
+          force_coordinates: [0,0,1920,1080]
+          imageurl: true
+      duration: 20

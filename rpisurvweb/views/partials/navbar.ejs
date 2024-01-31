@@ -1,0 +1,73 @@
+<!-- views/partials/_navbar.ejs -->
+<style>
+    /* ... your existing styles ... */
+    #sidebar {
+            position: fixed;
+            height: 100%;
+            width: 140px;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background-color: #333;
+            padding-top: 20px;
+    }
+    #content {
+            margin-left: 150px;
+            padding: 20px;
+    }
+
+    /* Style for the active class */
+    .navbar-dark .nav-item.active {
+        background-color: #555; /* Change the color as needed */
+    }
+
+    /* Style for the active class when hovering */
+    .navbar-dark .nav-item.active:hover {
+        background-color: #555; /* Change the color as needed */
+    }
+
+    /* Style for the active class SVG icon */
+    .navbar-dark .nav-item.active .nav-link img {
+        filter: brightness(1.2); /* Adjust brightness as needed */
+    }
+    /* Add hover effect for nav-link */
+    .nav-item:hover {
+        background-color: #444; /* Change the color as needed */
+    }
+
+    /* Add hover effect for SVG icon */
+    .nav-link:hover img {
+        filter: brightness(1.2); /* Adjust brightness as needed */
+    }
+</style>
+<nav id="sidebar" class="navbar-dark bg-dark">
+    <div class="text-center mb-3">
+        <img src="/assets/icons/web-cam-svgrepo-com.svg" alt="Top SVG Image" height="50">
+    </div>
+    <ul class="navbar-nav">
+        <li class="nav-item <%= helpers.activeClass(req, '/dashboard') %>">
+            <a class="nav-link" href="/dashboard">
+		<img src="/assets/icons/play-svgrepo-com.svg" alt="Icon 1" width="30" class="mr-2">&ensp;
+		Dashboard
+	</a>
+        </li>
+        <li class="nav-item <%= helpers.activeClass(req, '/streams') %>">
+            <a class="nav-link" href="/streams">
+		<img src="/assets/icons/clapperboard-svgrepo-com.svg" alt="Icon 1" width="30" class="mr-2">&ensp;
+		Streams
+	</a>
+        </li>
+        <li class="nav-item <%= helpers.activeClass(req, '/layout_1') %>">
+            <a class="nav-link" href="/layout_1">
+		<img src="/assets/icons/tv-svgrepo-com.svg" alt="Icon 1" width="30" class="mr-2">&ensp;
+		Display 1
+	</a>
+        </li>
+        <li class="nav-item <%= helpers.activeClass(req, '/network') %>">
+            <a class="nav-link" href="/network">
+		<img src="/assets/icons/modem-svgrepo-com.svg" alt="Icon 1" width="30" class="mr-2">&ensp;
+		Network
+	</a>
+        </li>
+    </ul>
+</nav>

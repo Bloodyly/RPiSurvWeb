@@ -1,0 +1,14 @@
+[Unit]
+Description=RPIsurv Web Interface using NODE.JS
+
+[Service]
+ExecStart=/var/www/rpisurvweb/server.js
+Restart=always
+User=root
+Group=root
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+WorkingDirectory=/var/www/rpisurvweb
+
+[Install]
+WantedBy=multi-user.target

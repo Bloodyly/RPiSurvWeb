@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+
+    <style>
+      body {
+        background-color: #343a40; /* Dark background color */
+        color: #fff; /* Text color */
+      }
+
+      main {
+        background-color: #495057; /* Darker background color for the form */
+        padding: 20px;
+        border-radius: 10px; /* Optional: Add border-radius for rounded corners */
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); /* Optional: Add box shadow for depth */
+        margin: auto;
+        max-width: 400px; /* Adjust the maximum width of the form */
+        margin-top: 10vh; /* Center the form vertically in the middle */
+      }
+
+      .form-floating {
+        position: relative;
+        margin-bottom: 20px; /* Adjust the margin between form fields */
+      }
+
+      .form-floating input {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px; /* Optional: Add border-radius for rounded corners */
+        background-color: #6c757d; /* Darker background color for form fields */
+        color: #fff; /* Text color for form fields */
+      }
+
+      .form-floating label {
+        color: #fff; /* Text color for labels */
+      }
+
+      .btn-primary {
+        background-color: #007bff; /* Button background color */
+        border-color: #007bff; /* Button border color */
+      }
+
+      .btn-primary:hover {
+        background-color: #0056b3; /* Hover state background color */
+        border-color: #0056b3; /* Hover state border color */
+      }
+    </style>
+  </head>
+  <body class="text-center">
+    <main class="form-signin">
+      <form action="/login" method="post">
+        <img class="mb-4" src="/assets/icons/web-cam-svgrepo-com.svg" alt="" width="72" height="57">
+        <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+
+        <div class="form-floating">
+          <input type="text" class="form-control" id="username" name="username" placeholder="name">
+          <label for="username">Username</label>
+        </div>
+        <div class="form-floating">
+          <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+          <label for="password">Password</label>
+        </div>
+
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+	 <div class="message"><%= message %></div>
+      </form>
+    </main>
+  </body>
+</html>

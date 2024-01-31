@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<data>
+  <row>
+    <layoutName>Layout1</layoutName>
+    <screenTime>20</screenTime>
+    <streams>
+      <item>Blank</item>
+    </streams>
+  </row>
+</data>

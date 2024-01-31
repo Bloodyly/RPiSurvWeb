@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "axios": "^1.6.7",
+    "body-parser": "^1.20.2",
+    "bootstrap": "^5.3.2",
+    "cookie-session": "^2.1.0",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "ini": "^4.1.1",
+    "jquery": "^3.7.1",
+    "js-yaml": "^4.1.0",
+    "node-rtsp-stream": "^0.0.9",
+    "socket.io": "^4.7.4",
+    "svg-gauge": "^1.0.7",
+    "systeminformation": "^5.21.24",
+    "ws": "^8.16.0",
+    "xml2js": "^0.6.2",
+    "xmlbuilder": "^15.1.1"
+  }
+}

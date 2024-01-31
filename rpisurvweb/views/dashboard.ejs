@@ -1,0 +1,260 @@
+<!-- views/dashboard.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+	<script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/node_modules/svg-gauge/dist/gauge.min.js"></script>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+        }
+        #sidebar {
+            position: fixed;
+            height: 100%;
+            width: 250px;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background-color: #333;
+            padding-top: 20px;
+        }
+		
+		.content-container {
+            display: flex;
+            margin-top: 20px;
+            margin-left: 150px;
+            left: 150px;
+        }
+
+        .content {
+            background-color: #333;
+            padding: 20px;
+            margin-bottom: 20px;
+            margin-right: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+		
+        .hidden {
+            opacity: 0;
+        }
+
+        .console-container {
+			font-family: 'monospace', Courier, monospace;
+            font-size: 14px;
+			text-align: left;
+            height: 220px;
+            width: 600px;
+            color: white;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border: groove;
+            overflow-y: scroll; /* Enable vertical scrolling */
+            position: relative;
+        }
+
+        .cursor {
+            display: inline-block;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% {
+                opacity: 0;
+            }
+            25%, 75% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Include the navigation bar partial -->
+    <%- include('partials/navbar') %>
+	<h1 style="margin-left: 150px"> Welcome to the RPIsurv Dashboard, <%= username %>!</h1>
+	<div id="content-container" class="content-container" >
+		<div id="leftpart" >
+			<div id="statusMessage" class="content" style="width:400px; height: 100px;">
+    				<div id="serviceStatusAlert" class="alert d-flex align-items-center" role="alert">
+        				<!-- Initial message and icon -->
+        				<svg id="serviceStatusIcon" class="bi flex-shrink-0 me-2" role="img" aria-label="Service Status:" width="16" height="16"></svg>
+        				<div id="serviceStatusText">
+            					RPIsurv service status is <b>&nbsp; unknown</b>
+        				</div>
+   				 </div>
+			</div>	
+			<div id="systemMonitor" class="content" style="width:400px; height: 160px;">
+				<div style="display: flex; height:120px">
+					<div class="wrapper">
+						<div id="gauge1" class="gauge-container one" style="width: 180px;">
+							<span class="label">CPU</span>
+						</div>
+					</div>
+					<div class="wrapper">
+						<div id="gauge2" class="gauge-container two" style="width: 180px; ">
+							<span class="label">RAM</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="livelog" class="content">
+				<div id="Terminal" class="Terminal">
+					LiveLog:
+					<div id="console" class="console-container">
+						<span id="terminaltext"></span>
+						<span id="cursor-span" class="cursor">_</span>
+					</div>
+				</div>
+			</div>
+	</div>
+		
+
+
+	<script>
+	const currentUrl = window.location.hostname;
+	var buffer = 'Dashboard Loaded, connecting to RPIsurv. \n \n';
+	var charsProcessed = 0; // Track the number of characters processed
+	var typing=false;
+	var gauge2 = Gauge(
+  document.getElementById("gauge2"), {
+    min: 0,
+    max: 100,
+    dialStartAngle: 180,
+    dialEndAngle: 0,
+    value: 50,
+     color: function(value) {
+        if(value < 0) {
+          return "#5ee432";
+        }else if(value < 50) {
+          return "#fffa50";
+        }else if(value < 75) {
+          return "#f7aa38";
+        }else {
+          return "#ef4655";
+        }
+      }
+  }
+);
+	var gauge1 = Gauge(
+  document.getElementById("gauge1"), {
+    min: 0,
+    max: 100,
+    dialStartAngle: 180,
+    dialEndAngle: 0,
+    value: 50,
+     color: function(value) {
+        if(value < 0) {
+          return "#5ee432";
+        }else if(value < 50) {
+          return "#fffa50";
+        }else if(value < 75) {
+          return "#f7aa38";
+        }else {
+          return "#ef4655";
+        }
+      }
+  }
+);
+
+function addToBuffer(data) {
+  buffer += data;
+}
+
+async function typewriterEffect(text) {
+  if(typing===true){return;}
+  typing=true;
+  var consoleContainer = document.getElementById('console');
+  var target = document.getElementById('terminaltext');
+  var cursorSpan = document.getElementById('cursor-span');
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function typeChar() {
+    for (var charIndex = charsProcessed; charIndex < buffer.length; charIndex++) {
+      var currentChar = buffer[charIndex];
+		
+		if (currentChar === '\n') {
+			target.innerHTML += '<br>';
+			await sleep(1); // Adjust the delay as needed
+		} else {
+			target.innerHTML += currentChar;
+			cursorSpan.style.left = (charIndex * 10) + 'px';
+			await sleep(1); // Adjust the delay as needed
+		}
+		consoleContainer.scrollTop = consoleContainer.scrollHeight;
+    }
+	charsProcessed = buffer.length; // Update the number of characters processed
+  }
+  cursorSpan.style.display = 'inline-block';
+  await typeChar();
+  typing=false;
+}
+
+//-------------------------------------
+  
+	typewriterEffect();
+	// Connect to the log WebSocket server
+	var logWss = new WebSocket(`ws://${currentUrl}:3001`);
+	var statWss= new WebSocket(`ws://${currentUrl}:3000`);
+	logWss.onopen = function () {
+		console.log('Connected to Log WebSocket server');
+		addToBuffer('Connected to Log WebSocket server\n');
+		typewriterEffect();
+	};
+
+  	logWss.onmessage = async function (event) {
+    		var newData = event.data;
+    		console.log('Received log data:', newData);
+		addToBuffer(newData);
+ 		typewriterEffect();
+ 	 };
+  	statWss.onmessage = async function (event) {
+  		var newData = event.data;
+		const dataObject = JSON.parse(newData);
+  		const cpuUsage = parseInt(dataObject.currentLoad);
+  		const ramUsage = 100-(parseInt(dataObject.availableRam));
+  		const serState = dataObject.servStatus;
+
+		gauge1.setValueAnimated(cpuUsage, 1);
+		gauge2.setValueAnimated(ramUsage, 1);
+
+	    // Update service status alert based on serState
+    const serviceStatusAlert = document.getElementById('serviceStatusAlert');
+    const serviceStatusIcon = document.getElementById('serviceStatusIcon');
+    const serviceStatusText = document.getElementById('serviceStatusText');
+
+    if (serState === 'active') {
+        // Set success alert class and green checkmark icon
+        serviceStatusAlert.classList.remove('alert-warning');
+        serviceStatusAlert.classList.add('alert-success');
+        serviceStatusIcon.innerHTML = '<path fill="currentColor" d="M5.5 10.85l-2.14-2.14a1.5 1.5 0 0 1 2.12-2.12L6 8.73l6.35-6.35a1.5 1.5 0 0 1 2.12 2.12L6 10.85l-1.65-1.65a1.5 1.5 0 0 1-2.12 0z"></path>';
+        serviceStatusText.innerHTML = 'RPIsurv service is <b>&nbsp; active</b>';
+    } else {
+        // Set danger alert class and red exclamation mark icon
+        serviceStatusAlert.classList.remove('alert-success');
+        serviceStatusAlert.classList.add('alert-danger');
+        serviceStatusIcon.innerHTML = '<path fill="currentColor" d="M10 1.5a1 1 0 0 1 1 1v8a1 1 0 0 1-2 0V2.5a1 1 0 0 1 1-1zM10 12a1 1 0 0 1-1-1 1 1 0 0 1 2 0 1 1 0 0 1-1 1z"></path>';
+        serviceStatusText.innerHTML = 'RPIsurv service is <b>&nbsp; not active</b>';
+    }
+ };
+
+  	logWss.onclose = async function () {
+    		console.log('Disconnected from Log WebSocket server');
+		addToBuffer('Disconnected from Log WebSocket server\n');
+		typewriterEffect();
+  	}
+
+	</script>
+</body>
+</html>

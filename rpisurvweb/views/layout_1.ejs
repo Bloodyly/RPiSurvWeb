@@ -1,0 +1,771 @@
+<!-- views/layout.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display</title>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="node_modules/js-yaml/dist/js-yaml.min.js"></script>
+	<script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: #222;
+            color: #fff;
+        }
+
+        .content-container {
+            display: flex;
+            margin-top: 20px;
+            margin-left: 150px;
+            left: 150px;
+        }
+
+        .content {
+            background-color: #333;
+            padding: 20px;
+            margin-bottom: 20px;
+            margin-right: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        #stream-settings {
+            width: 500px;
+            height: 600px;
+            overflow: auto;
+        }
+
+        /* TV Monitor Styling */
+        .tv-container {
+			background-image: url("/assets/screen.webp");
+			background-size: 600px auto;
+            position: relative;
+            height: 400px;
+            width: 600px;
+        }
+
+
+        .tv-image {
+            width: 600px;
+            height: auto;
+        }
+		
+		#screenCarousel {
+			position: absolute;
+            top: 5%;
+            left: 3%;
+            width: 94%;
+            height: 78%;
+            display: flex;
+            flex-wrap: wrap;
+		}
+		
+		.overlay {
+			height: 100%;
+			width: 100%;
+		}
+
+		.carousel-item {
+			height:100%;
+		}
+		
+        .clickable-box {
+            border: 2px solid #fff;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .selected {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .online-status,
+        .offline-status {
+            font-weight: bold;
+            color: green !important;
+        }
+
+        .offline-status {
+            color: red !important;
+        }
+		.screens-group {
+        display: flex;
+        overflow-x: auto;
+        max-width: calc(100% - 120px); /* Adjust as needed, considering the widths of other buttons */
+		}
+
+		.screens-group button {
+        flex-shrink: 0; /* Prevents buttons from shrinking */
+		}
+    </style>
+</head>
+
+<body>
+    <%- include('partials/navbar') %>
+	
+    <div id="content-container" class="content-container">
+		<div id="layout-preview" class="content">
+			<h1 class="h3 mb-3 fw-normal">Display 1 Layout</h1>
+            <div class="tv-container">
+				<div id="screenCarousel" class="carousel slide ">
+					<div class="carousel-inner" id="TVCarousel-inner">
+					
+					</div>
+				</div>
+            </div>
+			Screens:
+            <div class="controls" style="display: flex;">				    
+				<div style="flex: 0 0 auto;">
+					<button id="PreviousScreen" class="btn btn-info" type="button" data-toggle="tooltip" data-placement="bottom" title="Previous Screen"><</button>
+					<button id="delScreenButton" class="btn btn-danger" type="button" data-toggle="tooltip" data-placement="bottom" title="Remove a Screen">-</button>
+				</div>
+				<div id="screenButtons" style="flex: 1; overflow-x: auto; white-space: nowrap;">
+
+				</div>
+				<div style="flex: 0 0 auto;">
+					<button id="addScreenButton" class="btn btn-success" type="button" data-toggle="tooltip" data-placement="bottom" title="add a Screen">+</button>
+					<button id="NextScreen" class="btn btn-info" type="button" data-toggle="tooltip" data-placement="bottom" title="next Screen">></button>
+				 </div>
+            </div>
+	    <div id="ButtonDiv" style="padding: 10px;">
+	    	<button type="button" class="btn btn-success" onclick="collectAndSave()">Save</button>
+    	    </div>
+        </div>
+        <div id="stream-settings" class="content">
+			<div id="TableCarousel" class="carousel slide ">
+				<div id="TableCarousel-inner" class="carousel-inner">
+				
+				</div>
+			</div>
+        </div>
+    </div>
+    
+
+
+    <script>    
+const boxCountSelect = document.getElementById('boxCount');
+const screenCarousel = document.getElementById('screenCarousel');
+const tableCarousel = document.getElementById('TableCarousel');
+const screenButtonsDiv = document.getElementById('screenButtons');
+const overlayWidth = screenCarousel.clientWidth;
+const overlayHeight = screenCarousel.clientHeight;
+const widthScale = overlayWidth / 1920; // Assuming 1920 is the original width in the XML
+const heightScale = overlayHeight / 1080; // Assuming 1080 is the original height in the XML
+	
+var positions;
+var streamsData = [];
+var layoutData = {};
+var screensData =  [];
+var streamNames = [];
+document.getElementById('NextScreen').addEventListener('click', navigateNext);
+document.getElementById('PreviousScreen').addEventListener('click', navigatePrev);
+document.getElementById('addScreenButton').addEventListener('click', addScreen);
+document.getElementById('delScreenButton').addEventListener('click', delScreen);
+
+document.addEventListener('DOMContentLoaded', function () {
+screenCarouselc = new bootstrap.Carousel(document.getElementById('screenCarousel'));
+tableCarouselc = new bootstrap.Carousel(document.getElementById('TableCarousel'));
+	
+	
+	layoutData = fetchLayouts();
+	screensData = fetchScreens();
+	parseStreamData(function(parsedStreamData) {
+	streamsData=parsedStreamData;
+	streamNames = streamsData.map(stream => stream.name);
+	populateScreens(screensData);
+	});
+
+	//enable Tooltips
+	$('[data-toggle="tooltip"]').tooltip();
+	//add Overlay1 and Table 1 for beginning:
+	
+	
+	
+	//enable button active set on change
+	$('#screenCarousel').on('slid.bs.carousel', function () {
+		const children = Array.from(document.getElementById('TVCarousel-inner').children);
+		const activeIndex = children.findIndex(child => child.classList.contains('active'));
+		setButtonActive(activeIndex+1);
+	});
+});
+
+	
+
+function navigateNext() {
+    // Navigate both carousels to the next slide
+    screenCarouselc.next();
+    tableCarouselc.next();
+}
+
+function navigatePrev() {
+    // Navigate both carousels to the previous slide
+    screenCarouselc.prev();
+    tableCarouselc.prev();
+}
+
+function fetchLayouts() {
+	var result;
+		$.ajax({
+			url: '/loadFromXml',
+			method: 'POST',
+			async: false,
+			headers: {
+					'Content-Type': 'application/xml', // Change the content type if needed
+					'X-Config-Path': './config/layouts.xml', // Specify the file path
+			},
+			success: function (response) {
+				if (response.data && response.data.layouts && response.data.layouts.layout) {
+					result = Array.isArray(response.data.layouts.layout) ? response.data.layouts.layout : [response.data.layouts.layout];
+				}
+				else {
+					console.error('not right layout!');
+				}
+			},
+			error: function (error) {
+				console.error('Error fetching XML:', error);
+			}
+		});	
+	return result;
+}
+
+function fetchScreens() {
+	var result;
+		$.ajax({
+			url: '/loadFromXml',
+			method: 'POST',
+			async: false,
+			headers: {
+					'Content-Type': 'application/xml', // Change the content type if needed
+					'X-Config-Path': './config/screens.xml', // Specify the file path
+			},
+			success: function (response) {
+				result = response;
+			},
+			error: function (error) {
+				console.error('Error fetching XML:', error);
+			}
+		});	
+	return result;
+}
+
+function fetchStreams(callback) {
+    $.ajax({
+        url: '/loadFromXml',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/xml',
+            'X-Config-Path': './config/streams.xml',
+        },
+        success: function (response) {
+            callback(response); // Call the callback with the response
+        },
+        error: function (error) {
+            console.error(error);
+            callback(null); // Call the callback with null in case of an error
+        }
+    });
+}
+
+function parseStreamData(callback) {
+    fetchStreams(function(rawStreamData) {
+        const rows = rawStreamData.data.data.row;
+        var mapdata = rows.map(row => {
+	    const rowData = {};
+            const addVariablesObject = {};
+            Object.keys(row).forEach(key => {
+                if (key === 'addVariables') {
+                    const variableKey = Object.keys(row[key][0])[0];
+                    const variableValue = row[key][0][variableKey][0];
+                    addVariablesObject[variableKey] = variableValue;
+                    rowData[key] = [addVariablesObject];
+                } else if (Array.isArray(row[key]) && row[key].length === 1) {
+                    // If it's an array with only one element, take that element
+                    rowData[key] = row[key][0];
+                } else {
+                    // Otherwise, treat it as a regular property
+                    rowData[key] = row[key];
+                }
+            });
+	   return rowData;
+        });
+        // Return the processed data using the provided callback
+        if (callback) {
+            callback(mapdata);
+        }
+    });
+}
+function addOverlayDiv() {
+    const carouselInner = document.getElementById('TVCarousel-inner');
+	const numberOfDivs = carouselInner.querySelectorAll('.carousel-overlay-item').length;
+    const number = numberOfDivs+1;
+	// Create the new carousel item
+    const carouselItem = document.createElement('div');
+    carouselItem.classList.add('carousel-item');
+	carouselItem.classList.add('carousel-overlay-item');
+    carouselItem.id = `screen${number}`;
+
+    // Create the overlay div inside the carousel item
+    const overlayDiv = document.createElement('div');
+    overlayDiv.classList.add('overlay');
+    overlayDiv.id = `overlay${number}`;
+
+    // Append overlay div to carousel item
+    carouselItem.appendChild(overlayDiv);
+    // Append carousel item to carousel inner container
+    carouselInner.appendChild(carouselItem);
+	
+	// Create a button for the overlay
+    const button = document.createElement('button');
+    button.textContent = number;
+	button.classList.add('btn');
+	button.classList.add('btn-secondary'); 
+	button.addEventListener('click', () => slideTo(number));
+	screenButtonsDiv.appendChild(button);
+}
+
+function delOverlayDiv() {
+    const carouselInner = document.querySelector('#screenCarousel .carousel-inner');
+	const numberOfDivs = carouselInner.querySelectorAll('.carousel-overlay-item').length;
+    const number = numberOfDivs;
+	if(number===1)return;
+    // Find the carousel item with the specified number
+    const carouselItem = document.querySelector(`#screenCarousel .carousel-item#screen${number}`);
+
+    // Remove the carousel item if found
+    if (carouselItem) {
+        carouselInner.removeChild(carouselItem);
+    }
+	//remove the last button
+	const lastButton = screenButtonsDiv.lastChild;
+	screenButtonsDiv.removeChild(lastButton);
+}
+
+function addTable() {
+    const carouselInner = document.querySelector('#TableCarousel-inner');
+	const numberOfDivs = carouselInner.querySelectorAll('.carousel-table-item').length;
+    const number = numberOfDivs+1;
+	const layoutNames = layoutData.map(layout => layout.name);
+    // Create a new carousel item
+    const carouselItem = document.createElement('div');
+    carouselItem.classList.add('carousel-item');
+	carouselItem.classList.add('carousel-table-item');
+    carouselItem.id = `TableCarousel-item${number}`;
+
+	// 	Create a new div to hold the additional elements
+    const controlsDiv = document.createElement('div');
+    controlsDiv.classList.add('controls');
+	
+	// Add the label, select, and input elements
+    controlsDiv.innerHTML = `
+        <label for="boxCount${number}">Layout:</label>
+        <select class="layoutSelector" id="boxCount${number}" onchange="layoutSelectorUpdate(this.value, ${number})"></select>
+        <label for="timerinput${number}">Timer:</label>
+        <input class="timeInput" id="timerinput${number}" type="text" value="10">
+    `;
+
+    // Append the controls div to the carousel item
+    carouselItem.appendChild(controlsDiv);
+	
+    // Create a new table with a unique ID
+    const table = document.createElement('table');
+    table.id = `streamSettingsTable${number}`;
+    table.classList.add('table', 'table-dark', 'table-bordered');
+
+    // Add table header
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Box</th>
+            <th>Stream</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+
+    // Add an empty tbody
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+
+    // Append the table to the carousel item
+    carouselItem.appendChild(table);
+
+    // Append the carousel item to the carousel inner container
+    carouselInner.appendChild(carouselItem);
+	
+	layoutNames.forEach(function (layoutName) {
+		const option = $('<option>', {
+			value: layoutName[0],
+			text: layoutName[0],
+		});
+		$(`#boxCount${number}`).append(option);
+	});
+}
+
+function delTable() {
+    const carouselInner = document.querySelector('#TableCarousel-inner');
+	const numberOfDivs = carouselInner.querySelectorAll('.carousel-table-item').length;
+    const number = numberOfDivs;
+	if(number===1)return;
+    // Find the carousel item with the specified number
+    const carouselItem = document.querySelector(`#TableCarousel-inner .carousel-item#TableCarousel-item${number}`);
+
+    // Remove the carousel item if found
+    if (carouselItem) {
+        carouselInner.removeChild(carouselItem);
+    }
+}
+
+function addScreen() {
+	addOverlayDiv();
+	addTable();
+	const children = Array.from(document.getElementById('TVCarousel-inner').children);
+	setTimeout(() => {
+        layoutSelectorUpdate("Layout1",children.length);
+    }, 100);
+	
+
+}
+
+function delScreen() {
+	const children = Array.from(document.getElementById('TVCarousel-inner').children);
+	const activeIndex = children.findIndex(child => child.classList.contains('active')) +1 ;
+	const toDeleteIndex = children.length;
+	if(toDeleteIndex===1) {return;}
+	if(activeIndex === toDeleteIndex) {
+		setScreenActive(activeIndex-1);
+		setButtonActive(activeIndex-1);
+	}
+	delOverlayDiv();
+	delTable();
+}
+
+function setScreenActive(number) {
+	// Remove "active" class from all carousel items
+    const allCarouselItems = document.querySelectorAll('.carousel-item');
+    allCarouselItems.forEach(item => {
+        item.classList.remove('active');
+    });
+	const carouselScreenItem = document.getElementById(`screen${number}`);
+	if (carouselScreenItem) {
+        carouselScreenItem.classList.add('active');
+    }
+	const carouselTableItem = document.getElementById(`TableCarousel-item${number}`);
+	if (carouselTableItem) {
+        carouselTableItem.classList.add('active');
+    }
+}
+
+function setButtonActive(number) {
+	const ActiveButton = screenButtonsDiv.querySelector('.active');
+	const newActiveButton = screenButtonsDiv.children[number-1];
+	if (ActiveButton) {
+		ActiveButton.classList.remove('active');
+	}
+		newActiveButton.classList.add('active');
+}
+
+function slideTo(number){
+	screenCarouselc.to(number-1);
+	tableCarouselc.to(number-1);
+	setButtonActive(number);
+}
+
+function toggleBoxSelection(box) {
+    const selectedBoxes = document.querySelectorAll('.selected');
+
+    // Deselect all currently selected boxes
+    selectedBoxes.forEach(selectedBox => {
+        selectedBox.classList.remove('selected');
+    });
+
+    const selectedRow = document.querySelector('.table-active');
+    if (selectedRow) {
+        selectedRow.classList.remove('table-active');
+    }
+
+    // Toggle the selection for the clicked box and corresponding row
+    box.classList.toggle('selected');
+
+    // Get the corresponding row and highlight it
+    const boxIndex = parseInt(box.dataset.Index);
+    const row = document.querySelector('#streamSettingsTable tbody tr:nth-child(' + (boxIndex + 1) + ')');
+    if (row) {
+        row.classList.toggle('thead-light');
+        // Scroll to the highlighted row if it's outside the visible area
+        row.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+        });
+    }
+}
+
+function highlightTableRow(rowIndex,screenNumber) {
+	const allRows = document.querySelectorAll(`#streamSettingsTable${screenNumber} tbody tr`);
+	
+	// Deselect all currently selected rows
+    allRows.forEach((row, i) => {
+        row.classList.remove('table-active');
+        
+        // Highlight the corresponding row
+        if (i === rowIndex) {
+            row.classList.add('table-active');
+            
+            // Scroll to the highlighted row if it's outside the visible area
+            row.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+            });
+        }
+    });
+}
+
+function layoutSelectorUpdate(layoutName,screenNumber) {
+	updateOverlay(layoutName,screenNumber);
+	updateStreamTable(layoutName,screenNumber);
+}
+
+function updateOverlay(layoutName,screenNumber) {
+	const overlay = document.getElementById(`overlay${screenNumber}`);
+	const selectedLayoutData = layoutData.find(layout => layout.name[0] === layoutName);
+	positions = selectedLayoutData.position;
+    const boxCount = positions.length;
+	
+	overlay.innerHTML = ''; // Clear existing boxes
+
+    // Assuming streamData is an array of objects
+
+	for (let i = 0; i < boxCount; i++) {
+        const box = document.createElement('div');
+        box.classList.add('clickable-box');
+        box.innerText = i + 1; // Display box number for visibility
+        box.dataset.Index = i;
+        const position = positions[i];
+		const scaledXmin = position.Xmin[0] * widthScale;
+		const scaledYmin = position.Ymin[0] * heightScale;
+        const scaledWidth =
+        (position.Xmax[0] - position.Xmin[0]) * widthScale;
+        const scaledHeight =
+        (position.Ymax[0] - position.Ymin[0]) * heightScale;
+		
+        const boxStyle = `
+            position: absolute;
+            left: ${scaledXmin}px;
+            top: ${scaledYmin}px;
+            width: ${scaledWidth}px;
+			height: ${scaledHeight}px;
+        `;
+        box.style.cssText = boxStyle;
+        // Add click event listener to each box
+        box.addEventListener('click', function () {
+			toggleBoxSelection(box,screenNumber); // Toggle the selection for the clicked box
+			highlightTableRow(i,screenNumber);
+        });
+        overlay.appendChild(box);
+	}
+}
+
+function updateStreamTable(layoutName,screenNumber) {
+	const streamSettingsTableBody = document.querySelector(`#streamSettingsTable${screenNumber} tbody`);
+	const selectedLayoutData = layoutData.find(layout => layout.name[0] === layoutName);
+	positions = selectedLayoutData.position;
+    const boxCount = positions.length;
+	streamSettingsTableBody.innerHTML = ''; // Clear existing table rows
+	// Add table row for each box
+	for (let i = 0; i < boxCount; i++) {
+		const row = streamSettingsTableBody.insertRow();
+		row.innerHTML = `
+		<td>${i + 1}</td>
+        <td>
+			<select class="form-select" onchange="updateBoxText(this.value,${i},${screenNumber})">
+            ${streamNames.map(streamName => `<option value="${streamName}" ${i + 1 === streamName ? 'selected' : ''}>${streamName}</option>`).join('')}
+            </select>
+        </td>
+        `;
+	}    
+}
+
+function updateBoxText(selectedStream,boxIndex,screenNumber) {
+	const containerId = `overlay${screenNumber}`;
+    const container = document.getElementById(containerId);
+	if (container) {
+        const box = container.children[boxIndex];
+	    if (box) {
+            if (selectedStream === 'Blank') {
+                box.innerText = boxIndex + 1; 
+            } else {
+                box.innerText = selectedStream;
+            }
+        }
+	}
+}
+
+function updateStreamSettings(boxIndex) {
+    // Preselect the option based on boxIndex
+    const select = document.querySelector('#streamSettingsTable tbody tr:nth-child(' + (boxIndex + 1) + ') select');
+    const box = document.querySelectorAll('.clickable-box');
+    if (select) {
+        const selectedStream = select.value;
+        updateBoxText(box[boxIndex], selectedStream);
+    }
+}
+
+function getStreamName(stream) {
+    // Check if the stream is already known in streamData
+    const knownStream = streamData.find(known => known.address === stream.url);
+    if (knownStream) {
+        return knownStream.name;
+    } else {
+        // Use the last 8 characters of the stream URL as the name
+        return stream.url.slice(-8);
+    }
+}
+
+function collectAndSave() {
+const screens = [];
+	
+    // Iterate through each screen
+    const screenItems = document.querySelectorAll('.carousel-table-item');
+    screenItems.forEach(screenItem => {
+        const screen = {
+            layoutName: '',
+            screenTime: '',
+            streams: [],
+        };
+
+        // Get layoutName
+        const layoutSelector = screenItem.querySelector('.layoutSelector');
+        screen.layoutName = layoutSelector.value;
+
+        // Get screenTime
+        const timerInput = screenItem.querySelector('.timeInput');
+        screen.screenTime = parseInt(timerInput.value, 10);
+
+		// Get streams as key-value pairs
+		const streamSelects = screenItem.querySelectorAll('.form-select');
+		screen.streams = [];
+		streamSelects.forEach((select, index) => {
+			const streamName = select.name;
+			const streamValue = select.value;
+			screen.streams.push(streamValue)  // You can set a default value if needed
+		});
+
+        // Add the screen object to the screens array
+		screens.push(screen);
+    });
+
+	saveData(screens);
+
+    // You can send the XML data to the server or perform other actions here
+}
+
+function saveData(data){
+        $.ajax({
+			url: '/saveToXml',
+			method: 'POST',
+			contentType: 'application/json',
+			headers: {
+				   'X-Config-Path': './config/screens.xml', // Specify the file path
+				},
+			data: JSON.stringify(data),
+			//data: {data: data},
+			success: function (response){
+				window.location.reload();
+			},
+			error: function (error){
+				console.error(error);
+			}
+		});
+    }
+	
+function convertSavedData(savedData) {
+    if (!savedData || !savedData.data || !savedData.data.data || !savedData.data.data.row) {
+        console.log("invalid Structure");
+        return [];
+    }
+
+    return savedData.data.data.row.map(row => {
+        const layoutName = Array.isArray(row.layoutName) ? row.layoutName[0] : '';
+        const screenTime = Array.isArray(row.screenTime) ? parseInt(row.screenTime[0], 10) : 0;
+        
+        const streams = Array.isArray(row.streams) ? row.streams.map(stream => {
+            if (Array.isArray(stream.item)) {
+                return stream.item.map(item => item);
+            }
+            return [];
+        }) : [];
+
+        return {
+            layoutName,
+            screenTime,
+            streams: streams.flat(), // Flatten the nested arrays
+        };
+    });
+}
+
+function populateScreens(savedData) {
+	const convertedData = convertSavedData(savedData);
+    // Remove existing screens and tables
+    const screenCarouselInner = document.getElementById('TVCarousel-inner');
+    const tableCarouselInner = document.getElementById('TableCarousel-inner');
+	const ScreenButtonsInner = document.getElementById('screenButtons');
+    screenCarouselInner.innerHTML = '';
+    tableCarouselInner.innerHTML = '';
+	ScreenButtonsInner.innerHTML = '';
+    // Iterate through saved data and add screens and tables
+    convertedData.forEach((screen, index) => {
+        // Add overlay div for the screen
+        addOverlayDiv();
+		addTable();
+        const overlayNumber = index + 1;
+        // Update layout and stream table for the screen
+
+        layoutSelectorUpdate(screen.layoutName, overlayNumber);
+        updateStreamTable(screen.layoutName, overlayNumber);
+
+        // Set screen active
+        setScreenActive(overlayNumber);
+
+        // Set button active
+        setButtonActive(overlayNumber);
+
+        // Populate screen time input
+        const timerInput = document.getElementById(`timerinput${overlayNumber}`);
+        timerInput.value = screen.screenTime;
+		
+		// Populate layout Selector
+        const layoutSelector = document.getElementById(`boxCount${overlayNumber}`);
+        layoutSelector.value = screen.layoutName;
+
+        // Populate stream selects
+        const streamSelects = document.querySelectorAll(`#TableCarousel-item${overlayNumber} select.form-select`);
+        screen.streams.forEach((stream, i) => {
+            streamSelects[i].value = stream;
+			// Update the text inside the corresponding box based on the selected stream
+            const containerId = `overlay${overlayNumber}`;
+            const container = document.getElementById(containerId);
+            if (container) {
+                const box = container.children[i];
+                if (box) {
+                    if (stream === 'Blank') {
+                        box.innerText = i + 1;
+                    } else {
+                        box.innerText = stream;
+                    }
+                }
+            }
+        });
+    });
+}
+
+</script>
+</body>
+
+</html>

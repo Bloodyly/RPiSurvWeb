@@ -1,0 +1,144 @@
+<!-- views/network.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network</title>
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+        }
+
+        #sidebar {
+            position: fixed;
+            height: 100%;
+            width: 250px;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background-color: #333;
+            padding-top: 20px;
+        }
+		.content-container {
+            display: flex;
+            margin-top: 20px;
+            margin-left: 150px;
+            left: 150px;
+        }
+
+        .content {
+            background-color: #333;
+            padding: 20px;
+            margin-bottom: 20px;
+            margin-right: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .tab-content {
+            transition: opacity 2s ease; /* Add transition effect for opacity */
+        }
+        .hidden {
+            display: none;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Include the navigation bar partial -->
+    <%- include('partials/navbar') %>
+
+    <div id="content" class="container content mt-4">
+        <ul class="nav nav-tabs">
+            <li class="nav-item"><a id="nav-eth" class="nav-link active" href="#"  onclick="openEthernet()">Ethernet</a></li>
+            <li class="nav-item"><a id="nav-wifi" class="nav-link" href="#" onclick="openWifi()">Wifi</a></li>
+        </ul>
+        <div id="tab-ethernet" class="tab-content">
+            <div class="tab-pane fade active show" role="tabpanel">
+                <div class="form-check form-switch">
+					<input class="form-check-input" type="checkbox" role="switch" id="dhcpSwitch" onclick="toggleDHCP()">
+					<label class="form-check-label" for="DHCP">DHCP</label>
+				</div>
+
+				<form class="container">
+				
+				ETHERNET
+                    <fieldset id="eth-group" class="form-group">
+                        <div class="input-group mb-3">
+							<span class="input-group-text" id="basic-addon1" style="width:140px;">IP Address</span>
+							<input id="inputIP" type="text" class="form-control" placeholder="192.168.x.x" aria-label="IP Address" aria-describedby="IP Address">
+						</div>
+                        <div class="input-group mb-3">
+							<span class="input-group-text" id="basic-addon1" style="width:140px;">Subnet Mask</span>
+							<input id="inputSBM" type="text" class="form-control" placeholder="255.255.255.0" aria-label="Subnet Mask" aria-describedby="Subnet Mask">
+						</div>
+                        <div class="input-group mb-3">
+							<span class="input-group-text" id="basic-addon1" style="width:140px;">Default Gateway</span>
+							<input id="inputDG" type="text" class="form-control" placeholder="192.168.x.x" aria-label="Gateway" aria-describedby="Gateway">
+						</div>						
+                        <div class="input-group mb-3">
+							<span class="input-group-text" id="basic-addon1" style="width:140px;">Primary DNS</span>
+							<input id="inputDNS1" type="text" class="form-control" placeholder="8.8.8.8" aria-label="Primary DNS" aria-describedby="Primary DNS">
+						</div>	
+						<div class="input-group mb-3">
+							<span class="input-group-text" id="basic-addon1" style="width:140px;">Secundary DNS</span>
+							<input id="inputDNS2" type="text" class="form-control" placeholder="1.1.1.1" aria-label="Secundary DNS" aria-describedby="Secundary DNS">
+						</div>	
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+		<div id="tab-wifi" class="tab-content hidden">
+            <div class="tab-pane fade active show" role="tabpanel">
+                <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="checkbox1"><label class="custom-control-label">use DHCP</label></div>
+                <form class="container">
+				
+				WIFI
+                    <fieldset class="form-group">
+                        <div class="row"><label class="col-form-label col-sm-2">IP Address</label>
+                            <div class="col-sm-10"></div>
+                        </div>
+                    </fieldset>
+                    <fieldset class="form-group">
+                        <div class="row"><label class="col-form-label col-sm-2">Network Mask</label>
+                            <div class="col-sm-10"></div><label class="col-form-label col-sm-2">Default Gateway</label>
+                            <div class="col-sm-10"></div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script>
+        function openEthernet() {
+            document.getElementById('tab-ethernet').classList.remove('hidden');
+            document.getElementById('tab-wifi').classList.add('hidden');
+			document.getElementById('nav-eth').classList.add('active', 'show');
+			document.getElementById('nav-wifi').classList.remove('active', 'show');
+        }
+
+        function openWifi() {
+            document.getElementById('tab-wifi').classList.remove('hidden');
+            document.getElementById('tab-ethernet').classList.add('hidden');
+			document.getElementById('nav-wifi').classList.add('active', 'show');
+			document.getElementById('nav-eth').classList.remove('active', 'show');
+		}
+		function toggleDHCP() {
+        var dhcpSwitch = document.getElementById('dhcpSwitch');
+        var formGroup = document.getElementById('eth-group');
+		
+        // Get all input elements inside the form-group
+        var inputFields = formGroup.querySelectorAll('input');
+
+        inputFields.forEach(function (input) {
+            input.disabled = dhcpSwitch.checked;
+        });
+    }
+    </script>
+    <!-- Your other scripts and styles go here -->
+</body>
+</html>

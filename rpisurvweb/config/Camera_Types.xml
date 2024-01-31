@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!--This are the Definitions for the Streamtypes available-->
+<!--the prefix will be added before the URL-->
+<!--the postfix defines what comes after the URL-->
+<!--add will add options to the stream, like "RTSP_over_TCP" or "imageurl"-->
+<!--IMPORTANT: if there is a space after the name:the add key will no be editable in the interface. for example see imageurl: true-->
+<!-- "<add>imageurl:true</add> -right. "<add>imageurl: true</add>" -> wrong! -->
+<!--[] will add a variable to be set in "additional settings"-->
+<!--additional Variable can only be set in prefix and postfix-->
+<data>
+<!--the following are default types and should not be edited!-->
+	<option>
+		<name>Static Image</name>
+		<mainfieldname>path</mainfieldname>
+		<prefix>file://</prefix>
+		<postfix></postfix>
+		<add>imageurl: true</add>
+	</option>
+	<option>
+		<name>Video File</name>
+		<mainfieldname>path</mainfieldname>
+		<prefix>file://</prefix>
+		<postfix></postfix>
+	</option>
+	<option>
+		<name>custom RTSP</name>
+		<mainfieldname>URL</mainfieldname>
+		<prefix></prefix>
+		<postfix></postfix>
+	</option>
+<!--these are some known Kamera type Definitions-->
+	<option>
+		<name>hikvision Cam</name>
+		<mainfieldname>IP</mainfieldname>
+		<prefix>rtsp://[username]:[password]@</prefix>
+		<postfix>:[port]/Streaming/channels/[channel]</postfix>
+		<add>rtsp_over_tcp:true</add>
+	</option>
+	<option>
+		<name>Reolink Main</name>
+		<mainfieldname>IP</mainfieldname>
+		<prefix>rtsp://[username]:[password]@</prefix>
+		<postfix>:554/h264preview_01_main</postfix>
+	</option>
+	<option>
+		<name>Reolink Sub</name>
+		<prefix>rtsp://[username]:[password]@</prefix>
+		<postfix>:554/h264preview_01_sub</postfix>
+	</option>
+</data>
